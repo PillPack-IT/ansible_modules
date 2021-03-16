@@ -242,6 +242,7 @@ keyed_groups:
 import json
 import uuid
 import math
+import boto3
 from functools import partial
 from sys import version as python_version
 from threading import Thread
@@ -261,6 +262,13 @@ from ansible.module_utils.six.moves.urllib.parse import urlencode
 
 class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
     NAME = "netbox.netbox.nb_inventory"
+
+    def __init__(self, *args, **kwargs):
+        super(InventoryModule, self).__init__(*args, **kwargs)
+        if self.get_option("aws-region"):
+            self.ssm = boto3.client('ssm', region_name=self.get_option("aws-region"))
+        else:
+            self.ssm = None
 
     def _fetch_information(self, url):
         results = None
@@ -1487,9 +1495,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         self.use_cache = cache
 
         # Netbox access
-        token = self.get_option("token")
-        # Handle extra "/" from api_endpoint configuration and trim if necessary, see PR#49943
-        self.api_endpoint = self.get_option("api_endpoint").strip("/")
+        if self.ssm:
+            token_path = self.get_option("token-path")
+            token = self.ssm.get_parameter(Name=token_path, WithDecryption=True)['Parameter']['Value'],
+        else:
+            token = self.get_option("token")
+        if self.ssm:
+            # If stored in AWS Parameter Store, store only as hostname / IP
+            url_path = self.get_option("url-path")
+            base_url = self.ssm.get_parameter(Name=url_path)['Parameter']['Value']
+            self.api_endpoint = f"https://{ base_url }"
+        else:
+            # Handle extra "/" from api_endpoint configuration and trim if necessary, see PR#49943
+            self.api_endpoint = self.get_option("api_endpoint").strip("/")
         self.timeout = self.get_option("timeout")
         self.max_uri_length = self.get_option("max_uri_length")
         self.validate_certs = self.get_option("validate_certs")
