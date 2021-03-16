@@ -261,7 +261,7 @@ from ansible.module_utils.six.moves.urllib.parse import urlencode
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
-    NAME = "netbox.netbox.nb_inventory"
+    NAME = "ap_it_infra.netbox.nb_inventory"
 
     def __init__(self, *args, **kwargs):
         super(InventoryModule, self).__init__(*args, **kwargs)
