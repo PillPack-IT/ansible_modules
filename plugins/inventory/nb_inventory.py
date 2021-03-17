@@ -261,12 +261,12 @@ from ansible.module_utils.six.moves.urllib.parse import urlencode
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
-    NAME = "ap_it_infra.netbox.nb_inventory"
+    NAME = "ap_it_infra_nb_inventory"
 
     def __init__(self, *args, **kwargs):
         super(InventoryModule, self).__init__(*args, **kwargs)
-        if self.get_option("aws-region"):
-            self.ssm = boto3.client('ssm', region_name=self.get_option("aws-region"))
+        if self.get_option("aws_region"):
+            self.ssm = boto3.client('ssm', region_name=self.get_option("aws_region"))
         else:
             self.ssm = None
 
@@ -1496,13 +1496,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         # Netbox access
         if self.ssm:
-            token_path = self.get_option("token-path")
+            token_path = self.get_option("token_path")
             token = self.ssm.get_parameter(Name=token_path, WithDecryption=True)['Parameter']['Value'],
         else:
             token = self.get_option("token")
         if self.ssm:
             # If stored in AWS Parameter Store, store only as hostname / IP
-            url_path = self.get_option("url-path")
+            url_path = self.get_option("url_path")
             base_url = self.ssm.get_parameter(Name=url_path)['Parameter']['Value']
             self.api_endpoint = f"https://{ base_url }"
         else:
